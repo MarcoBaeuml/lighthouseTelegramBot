@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/MarcoBaeuml/lighthouseTelegramBot/issues"
   },
-  "homepage": "https://github.com/MarcoBaeuml/lighthouseTelegramBot#readme"
+  "homepage": "https://github.com/MarcoBaeuml/lighthouseTelegramBot#readme",
+  "dependencies": {
+    "lighthouse": "^8.0.0"
+  }
 }
