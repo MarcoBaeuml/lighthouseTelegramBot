@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "repository": {
     "type": "git",
@@ -18,6 +19,11 @@
   },
   "homepage": "https://github.com/MarcoBaeuml/lighthouseTelegramBot#readme",
   "dependencies": {
-    "lighthouse": "^8.0.0"
+    "date-and-time": "^1.0.1",
+    "lighthouse": "^8.0.0",
+    "node-telegram-bot-api": "^0.53.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
   }
 }
