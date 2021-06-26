@@ -3,11 +3,11 @@ process.env.NTBA_FIX_350 = 1;
 const TelegramBot = require("node-telegram-bot-api");
 const fs = require("fs-extra");
 const lighthouse = require("lighthouse");
-const chromeLauncher = require("chrome-launcher");
 const dateFormater = require("date-and-time");
 const tokenJson = require("./token.json");
 const configDesktop = require("lighthouse/lighthouse-core/config/lr-desktop-config.js");
 const configMobile = require("lighthouse/lighthouse-core/config/lr-mobile-config.js");
+const WikiFakt = require("wikifakt");
 const puppeteer = require("puppeteer");
 
 const token = tokenJson.token;
@@ -29,6 +29,9 @@ bot.on("message", (msgjson) => {
     case msg == "/generate":
       onGenerate(chatId);
       break;
+    case msg == "/fact":
+      onFact(chatId);
+      break;
     default:
       bot.sendMessage(chatId, "Invalid Command");
       break;
@@ -47,7 +50,7 @@ bot.on("callback_query", (callbackQuery) => {
 function onHelp(chatId) {
   bot.sendMessage(
     chatId,
-    "/help ==> print help\n /url ==> display current url\n /url <url> ==> change url e.g.: /url https://www.google.com\n /generate ==> generate Lighthouse report"
+    "/help ==> print help \n/url ==> display current url \n/url <url> ==> change url e.g.: /url https://www.google.com \n/generate ==> generate Lighthouse report \n/fact ==> print random fact"
   );
 }
 
@@ -83,12 +86,7 @@ function onGenerate(chatId) {
 }
 
 async function generateLighthouse(chatId, filename, device) {
-  let config;
-  if (device == "desktop") {
-    config = configDesktop;
-  } else if (device == "mobile") {
-    config = configMobile;
-  }
+  const config = device == "desktop" ? configDesktop : configMobile;
   bot.sendMessage(chatId, "Lighthouse is warming up...");
   const browser = await puppeteer.launch({ headless: true });
   const options = {
@@ -96,8 +94,6 @@ async function generateLighthouse(chatId, filename, device) {
     output: "html",
     onlyCategories: ["performance", "accessibility", "best-practices", "seo"],
     port: new URL(browser.wsEndpoint()).port,
-    disableDeviceEmulation: true,
-    chromeFlags: ["--disable-mobile-emulation", "--disable-storage-reset"],
   };
 
   const urlJason = await fs.readJsonSync("url.json");
@@ -110,4 +106,10 @@ async function generateLighthouse(chatId, filename, device) {
 async function sendLighthouseReport(chatId, filename) {
   await bot.sendDocument(chatId, filename);
   fs.unlinkSync(filename);
+}
+
+function onFact(chatId) {
+  WikiFakt.getRandomFact().then(function (fact) {
+    bot.sendMessage(chatId, fact);
+  });
 }
