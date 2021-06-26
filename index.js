@@ -5,8 +5,12 @@ const fs = require("fs-extra");
 const lighthouse = require("lighthouse");
 const chromeLauncher = require("chrome-launcher");
 const dateFormater = require("date-and-time");
+const tokenJson = require("./token.json");
+const configDesktop = require("lighthouse/lighthouse-core/config/lr-desktop-config.js");
+const configMobile = require("lighthouse/lighthouse-core/config/lr-mobile-config.js");
+const puppeteer = require("puppeteer");
 
-const token = "1898235019:AAHK8TEyGfZOJqnHEzH-qWMNhhni8hmudew";
+const token = tokenJson.token;
 const bot = new TelegramBot(token, { polling: true });
 let longdate = new Date();
 date = dateFormater.format(longdate, "YYYY-MM-DD_HH-mm");
@@ -16,6 +20,7 @@ bot.on("message", (msgjson) => {
   const msg = msgjson.text;
   switch (true) {
     case msg == "/help":
+    case msg == "/start":
       onHelp(chatId);
       break;
     case /url(.*)/.test(msg):
@@ -42,7 +47,7 @@ bot.on("callback_query", (callbackQuery) => {
 function onHelp(chatId) {
   bot.sendMessage(
     chatId,
-    "/help - print help\n /url - display current url\n /url <url> - change url\n /generate - generate Lighthouse report"
+    "/help ==> print help\n /url ==> display current url\n /url <url> ==> change url e.g.: /url https://www.google.com\n /generate ==> generate Lighthouse report"
   );
 }
 
@@ -53,6 +58,7 @@ function onUrl(chatId, msg) {
     bot.sendMessage(chatId, urlJason.url);
   } else if (urlCommandSplitted.length == 2) {
     fs.outputJsonSync("url.json", { url: urlCommandSplitted[1] });
+    bot.sendMessage(chatId, "url has been changed ");
   }
 }
 
@@ -77,19 +83,26 @@ function onGenerate(chatId) {
 }
 
 async function generateLighthouse(chatId, filename, device) {
+  let config;
+  if (device == "desktop") {
+    config = configDesktop;
+  } else if (device == "mobile") {
+    config = configMobile;
+  }
   bot.sendMessage(chatId, "Lighthouse is warming up...");
-  const chrome = await chromeLauncher.launch({ chromeFlags: ["--headless"] });
+  const browser = await puppeteer.launch({ headless: true });
   const options = {
     logLevel: "info",
     output: "html",
     onlyCategories: ["performance", "accessibility", "best-practices", "seo"],
-    port: chrome.port,
+    port: new URL(browser.wsEndpoint()).port,
   };
+
   const urlJason = await fs.readJsonSync("url.json");
-  const runnerResult = await lighthouse(urlJason.url, options);
+  const runnerResult = await lighthouse(urlJason.url, options, config);
   const reportHtml = runnerResult.report;
   fs.writeFileSync(filename, reportHtml);
-  await chrome.kill();
+  await browser.close();
 }
 
 async function sendLighthouseReport(chatId, filename) {

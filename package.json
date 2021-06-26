@@ -19,6 +19,7 @@
     "fs-extra": "^10.0.0",
     "lighthouse": "^8.0.0",
     "node-telegram-bot-api": "^0.53.0",
+    "puppeteer": "^10.0.0",
     "ws": "^7.5.0"
   }
 }
