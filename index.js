@@ -96,6 +96,8 @@ async function generateLighthouse(chatId, filename, device) {
     output: "html",
     onlyCategories: ["performance", "accessibility", "best-practices", "seo"],
     port: new URL(browser.wsEndpoint()).port,
+    disableDeviceEmulation: true,
+    chromeFlags: ["--disable-mobile-emulation", "--disable-storage-reset"],
   };
 
   const urlJason = await fs.readJsonSync("url.json");
