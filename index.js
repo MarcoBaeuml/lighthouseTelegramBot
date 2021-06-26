@@ -21,7 +21,7 @@ bot.on("message", (msgjson) => {
   switch (true) {
     case msg == "/help":
     case msg == "/start":
-      onHelp(chatId);
+      onHelporStart(chatId);
       break;
     case /url(.*)/.test(msg):
       onUrl(chatId, msg);
@@ -40,17 +40,23 @@ bot.on("message", (msgjson) => {
 
 bot.on("callback_query", (callbackQuery) => {
   const chatId = callbackQuery.from.id;
-  const device = callbackQuery.data;
-  const filename = device + "-" + date + ".html";
-  generateLighthouse(chatId, filename, device).then(() => {
-    sendLighthouseReport(chatId, filename);
-  });
+  const msg = callbackQuery.data;
+  switch (true) {
+    case msg == "desktop":
+    case msg == "mobile":
+      onDesktopOrMobile(chatId, msg);
+      break;
+  }
 });
 
-function onHelp(chatId) {
+// on message functions
+
+function onHelporStart(chatId) {
   bot.sendMessage(
     chatId,
-    "/help ==> print help \n/url ==> display current url \n/url <url> ==> change url e.g.: /url https://www.google.com \n/generate ==> generate Lighthouse report \n/fact ==> print random fact"
+    "<code>/help - print help \n/url - display current url \n/url &#60url&#62 - change url e.g.: /url https://www.google.com" +
+      "\n/generate - generate Lighthouse report \n/fact - print random fact</code>",
+    { parse_mode: "HTML" }
   );
 }
 
@@ -85,6 +91,25 @@ function onGenerate(chatId) {
   bot.sendMessage(chatId, "Select device for lighthouse report ", opts);
 }
 
+function onFact(chatId) {
+  WikiFakt.getRandomFact().then(function (fact) {
+    bot.sendMessage(chatId, fact);
+  });
+}
+
+// on callback functions
+
+function onDesktopOrMobile(_chatId, msg) {
+  const chatId = _chatId;
+  const device = msg;
+  const filename = device + "-" + date + ".html";
+  generateLighthouse(chatId, filename, device).then(() => {
+    sendLighthouseReport(chatId, filename);
+  });
+}
+
+//other functions
+
 async function generateLighthouse(chatId, filename, device) {
   const config = device == "desktop" ? configDesktop : configMobile;
   bot.sendMessage(chatId, "Lighthouse is warming up...");
@@ -106,10 +131,4 @@ async function generateLighthouse(chatId, filename, device) {
 async function sendLighthouseReport(chatId, filename) {
   await bot.sendDocument(chatId, filename);
   fs.unlinkSync(filename);
-}
-
-function onFact(chatId) {
-  WikiFakt.getRandomFact().then(function (fact) {
-    bot.sendMessage(chatId, fact);
-  });
 }
