@@ -20,7 +20,11 @@
     "lighthouse": "^8.0.0",
     "node-telegram-bot-api": "^0.53.0",
     "puppeteer": "^10.0.0",
+    "valid-url": "^1.0.9",
     "wikifakt": "^1.0.3",
     "ws": "^7.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.8"
   }
 }

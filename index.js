@@ -9,14 +9,31 @@ const configDesktop = require("lighthouse/lighthouse-core/config/lr-desktop-conf
 const configMobile = require("lighthouse/lighthouse-core/config/lr-mobile-config.js");
 const WikiFakt = require("wikifakt");
 const puppeteer = require("puppeteer");
+const validUrl = require("valid-url");
 
 const token = tokenJson.token;
 const bot = new TelegramBot(token, { polling: true });
 let longdate = new Date();
 date = dateFormater.format(longdate, "YYYY-MM-DD_HH-mm");
 
+const whitelistJson = fs.readJsonSync("whitelist.json");
+
 bot.on("message", (msgjson) => {
   const chatId = msgjson.chat.id;
+  let userCheck = 0;
+  for (const id in whitelistJson.users) {
+    const user = whitelistJson.users[id];
+    if (user == chatId) {
+      userCheck++;
+    } else {
+      userCheck += 0;
+    }
+  }
+  if (userCheck < 1) {
+    console.log("Denied: " + chatId);
+    return;
+  }
+
   const msg = msgjson.text;
   switch (true) {
     case msg == "/help":
@@ -63,11 +80,15 @@ function onHelporStart(chatId) {
 function onUrl(chatId, msg) {
   const urlCommandSplitted = msg.split(" ");
   if (urlCommandSplitted.length == 1) {
-    const urlJason = fs.readJsonSync("url.json");
-    bot.sendMessage(chatId, urlJason.url);
+    const urlJson = fs.readJsonSync("url.json");
+    bot.sendMessage(chatId, urlJson.url);
   } else if (urlCommandSplitted.length == 2) {
-    fs.outputJsonSync("url.json", { url: urlCommandSplitted[1] });
-    bot.sendMessage(chatId, "url has been changed ");
+    if (validUrl.isUri(urlCommandSplitted[1])) {
+      fs.outputJsonSync("url.json", { url: urlCommandSplitted[1] });
+      bot.sendMessage(chatId, "url has been changed ");
+    } else {
+      bot.sendMessage(chatId, "url invalid");
+    }
   }
 }
 
@@ -113,7 +134,7 @@ function onDesktopOrMobile(_chatId, msg) {
 async function generateLighthouse(chatId, filename, device) {
   const config = device == "desktop" ? configDesktop : configMobile;
   bot.sendMessage(chatId, "Lighthouse is warming up...");
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({ args: ["--no-sandbox"] });
   const options = {
     logLevel: "info",
     output: "html",
@@ -121,8 +142,8 @@ async function generateLighthouse(chatId, filename, device) {
     port: new URL(browser.wsEndpoint()).port,
   };
 
-  const urlJason = await fs.readJsonSync("url.json");
-  const runnerResult = await lighthouse(urlJason.url, options, config);
+  const urlJson = await fs.readJsonSync("url.json");
+  const runnerResult = await lighthouse(urlJson.url, options, config);
   const reportHtml = runnerResult.report;
   fs.writeFileSync(filename, reportHtml);
   await browser.close();
