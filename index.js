@@ -30,7 +30,7 @@ bot.on("message", (msgjson) => {
     }
   }
   if (userCheck < 1) {
-    console.log("Denied: " + chatId);
+    console.log("Denied: " + msgjson.chat.first_name + " " + chatId);
     return;
   }
 
