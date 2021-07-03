@@ -4,44 +4,32 @@ const TelegramBot = require("node-telegram-bot-api");
 const fs = require("fs-extra");
 const lighthouse = require("lighthouse");
 const dateFormater = require("date-and-time");
-const tokenJson = require("./token.json");
 const configDesktop = require("lighthouse/lighthouse-core/config/lr-desktop-config.js");
 const configMobile = require("lighthouse/lighthouse-core/config/lr-mobile-config.js");
 const WikiFakt = require("wikifakt");
 const puppeteer = require("puppeteer");
 const validUrl = require("valid-url");
 
-const token = tokenJson.token;
-const bot = new TelegramBot(token, { polling: true });
-let longdate = new Date();
-date = dateFormater.format(longdate, "YYYY-MM-DD_HH-mm");
+const longdate = new Date();
+const date = dateFormater.format(longdate, "YYYY-MM-DD_HH-mm");
+let data = fs.readJsonSync("./data.json");
+const bot = new TelegramBot(data.token, { polling: true });
 
-const whitelistJson = fs.readJsonSync("whitelist.json");
-
-bot.on("message", (msgjson) => {
-  const chatId = msgjson.chat.id;
-  let userCheck = 0;
-  for (const id in whitelistJson.users) {
-    const user = whitelistJson.users[id];
-    if (user == chatId) {
-      userCheck++;
-    } else {
-      userCheck += 0;
-    }
-  }
-  if (userCheck < 1) {
-    console.log("Denied: " + msgjson.chat.first_name + " " + chatId);
+bot.on("message", (apiJson) => {
+  const chatId = apiJson.chat.id;
+  usrNr = checkUsrReg(chatId);
+  if (usrNr < 0) {
+    console.log("Denied: " + apiJson.from.first_name + " " + chatId);
     return;
   }
-
-  const msg = msgjson.text;
+  const msg = apiJson.text;
   switch (true) {
     case msg == "/help":
     case msg == "/start":
       onHelporStart(chatId);
       break;
     case /url(.*)/.test(msg):
-      onUrl(chatId, msg);
+      onUrl(chatId, msg, usrNr);
       break;
     case msg == "/generate":
       onGenerate(chatId);
@@ -57,14 +45,30 @@ bot.on("message", (msgjson) => {
 
 bot.on("callback_query", (callbackQuery) => {
   const chatId = callbackQuery.from.id;
+  usrNr = checkUsrReg(chatId);
+  if (usrNr < 0) {
+    console.log("Denied: " + callbackQuery.from.first_name + " " + chatId);
+    return;
+  }
   const msg = callbackQuery.data;
   switch (true) {
     case msg == "desktop":
     case msg == "mobile":
-      onDesktopOrMobile(chatId, msg);
+      onDesktopOrMobile(chatId, msg, usrNr);
       break;
   }
 });
+
+function checkUsrReg(chatId) {
+  data = fs.readJsonSync("./data.json");
+  let usrInd = -1;
+  for (let i = 0; i < data.user.length; i++) {
+    if (data.user[i].id == chatId) {
+      usrInd = i;
+    }
+  }
+  return usrInd;
+}
 
 // on message functions
 
@@ -77,18 +81,16 @@ function onHelporStart(chatId) {
   );
 }
 
-function onUrl(chatId, msg) {
-  const urlCommandSplitted = msg.split(" ");
-  if (urlCommandSplitted.length == 1) {
-    const urlJson = fs.readJsonSync("url.json");
-    bot.sendMessage(chatId, urlJson.url);
-  } else if (urlCommandSplitted.length == 2) {
-    if (validUrl.isUri(urlCommandSplitted[1])) {
-      fs.outputJsonSync("url.json", { url: urlCommandSplitted[1] });
-      bot.sendMessage(chatId, "url has been changed ");
-    } else {
-      bot.sendMessage(chatId, "url invalid");
-    }
+function onUrl(chatId, msg, usrNr) {
+  const urlSplt = msg.split(" ");
+  if (urlSplt.length == 1) {
+    bot.sendMessage(chatId, data.user[usrNr].url);
+  } else if (urlSplt.length == 2 && validUrl.isUri(urlSplt[1])) {
+    data.user[usrNr].url = urlSplt[1];
+    fs.outputJsonSync("./data.json", data, { spaces: 2 });
+    bot.sendMessage(chatId, "url has been changed ");
+  } else {
+    bot.sendMessage(chatId, "url invalid");
   }
 }
 
@@ -120,30 +122,28 @@ function onFact(chatId) {
 
 // on callback functions
 
-function onDesktopOrMobile(_chatId, msg) {
+function onDesktopOrMobile(_chatId, _msg, _usrNr) {
   const chatId = _chatId;
-  const device = msg;
-  const filename = device + "-" + date + ".html";
-  generateLighthouse(chatId, filename, device).then(() => {
+  const msg = _msg;
+  const usrNr = _usrNr;
+  const filename = msg + "-" + date + ".html";
+  generateLighthouse(chatId, msg, usrNr, filename).then(() => {
     sendLighthouseReport(chatId, filename);
   });
 }
 
 //other functions
 
-async function generateLighthouse(chatId, filename, device) {
-  const config = device == "desktop" ? configDesktop : configMobile;
+async function generateLighthouse(chatId, msg, usrNr, filename) {
+  const config = msg == "desktop" ? configDesktop : configMobile;
   bot.sendMessage(chatId, "Lighthouse is warming up...");
   const browser = await puppeteer.launch({ args: ["--no-sandbox"] });
   const options = {
-    logLevel: "info",
     output: "html",
     onlyCategories: ["performance", "accessibility", "best-practices", "seo"],
     port: new URL(browser.wsEndpoint()).port,
   };
-
-  const urlJson = await fs.readJsonSync("url.json");
-  const runnerResult = await lighthouse(urlJson.url, options, config);
+  const runnerResult = await lighthouse(data.user[usrNr].url, options, config);
   const reportHtml = runnerResult.report;
   fs.writeFileSync(filename, reportHtml);
   await browser.close();
