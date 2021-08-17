@@ -4,12 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js --ignore ./data.json"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MarcoBaeuml/lighthouseTelegramBot.git"
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "",
