@@ -22,7 +22,7 @@ bot.on("message", (apiJson) => {
   msg = apiJson.text;
   name = apiJson.from.first_name;
   usrNr = getUsrNr();
-  console.log(chatId + " " + name + ", " + usrNr + ", Message: '" + msg + "'");
+  console.log(date + ": " + chatId + " " + name + ", " + usrNr + ", Message: '" + msg + "'");
   if (usrNr == -1) {
     return;
   }
@@ -41,7 +41,7 @@ bot.on("message", (apiJson) => {
       onFact();
       break;
     default:
-      bot.sendMessage(chatId, "Invalid Command");
+      bot.sendMessage(chatId, "invalid command");
       break;
   }
 });
@@ -51,6 +51,7 @@ bot.on("callback_query", (callbackQuery) => {
   msg = callbackQuery.data;
   name = callbackQuery.from.first_name;
   usrNr = getUsrNr();
+  console.log(date + ": " + chatId + " " + name + ", " + usrNr + ", Message: '" + msg + "'");
   if (usrNr == -1) {
     return;
   }
@@ -116,8 +117,7 @@ function onFact() {
 // on callback functions
 
 function onDesktopOrMobile() {
-  const filename = msg + "-" + date + ".html";
-  console.log(chatId + " started lighthouse " + msg);
+  const filename = msg + "_" + date + ".html";
   generateLighthouse(filename).then(() => {
     sendLighthouseReport(filename);
   });
@@ -128,7 +128,7 @@ function onDesktopOrMobile() {
 function getUsrNr() {
   data = fs.readJsonSync("./data.json");
   for (let i = 0; i < data.user.length; i++) {
-    if (data.user[i].id == chatId) {
+    if (data.user[i].chatId == chatId) {
       return i;
     }
   }

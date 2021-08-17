@@ -23,8 +23,5 @@
     "valid-url": "^1.0.9",
     "wikifakt": "^1.0.3",
     "ws": "^7.5.0"
-  },
-  "devDependencies": {
-    "nodemon": "^2.0.8"
   }
 }
