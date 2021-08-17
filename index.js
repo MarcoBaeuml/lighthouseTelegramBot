@@ -22,7 +22,7 @@ bot.on("message", (apiJson) => {
   msg = apiJson.text;
   name = apiJson.from.first_name;
   usrNr = getUsrNr();
-  console.log(date + ": " + chatId + " " + name + ", " + usrNr + ", Message: '" + msg + "'");
+  console.log(date + ": " + chatId + " " + name + ", " + usrNr + ", message: '" + msg + "'");
   if (usrNr == -1) {
     return;
   }
@@ -51,7 +51,9 @@ bot.on("callback_query", (callbackQuery) => {
   msg = callbackQuery.data;
   name = callbackQuery.from.first_name;
   usrNr = getUsrNr();
-  console.log(date + ": " + chatId + " " + name + ", " + usrNr + ", Message: '" + msg + "'");
+  console.log(
+    date + ": " + chatId + " " + name + ", " + usrNr + ", callback message: '" + msg + "'"
+  );
   if (usrNr == -1) {
     return;
   }
