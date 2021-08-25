@@ -86,7 +86,7 @@ function onUrl() {
     fs.outputJsonSync("./data.json", data, { spaces: 2 });
     bot.sendMessage(chatId, "url has been changed to " + url[1]);
   } else {
-    bot.sendMessage(chatId, url[1] + " is a invalid url");
+    bot.sendMessage(chatId, url[1] + " is an invalid url");
   }
 }
 
