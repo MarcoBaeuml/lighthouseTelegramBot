@@ -10,18 +10,17 @@ const WikiFakt = require("wikifakt");
 const puppeteer = require("puppeteer");
 const validUrl = require("valid-url");
 
-const longdate = new Date();
-const date = dateFormater.format(longdate, "YYYY-MM-DD_HH-mm");
 let data = fs.readJsonSync("./data.json");
 const bot = new TelegramBot(data.token, { polling: true });
 
-let chatId, msg, name, usrNr;
+let chatId, msg, name, usrNr, date;
 
 bot.on("message", (apiJson) => {
   chatId = apiJson.chat.id;
   msg = apiJson.text;
   name = apiJson.from.first_name;
   usrNr = getUsrNr();
+  date = getDateTime();
   console.log(date + ": " + chatId + " " + name + ", " + usrNr + ", message: '" + msg + "'");
   if (usrNr == -1) {
     return;
@@ -51,6 +50,7 @@ bot.on("callback_query", (callbackQuery) => {
   msg = callbackQuery.data;
   name = callbackQuery.from.first_name;
   usrNr = getUsrNr();
+  date = getDateTime();
   console.log(
     date + ": " + chatId + " " + name + ", " + usrNr + ", callback message: '" + msg + "'"
   );
@@ -135,6 +135,12 @@ function getUsrNr() {
     }
   }
   return -1;
+}
+
+function getDateTime() {
+  const longdate = new Date();
+  const date = dateFormater.format(longdate, "YYYY-MM-DD_HH-mm");
+  return date;
 }
 
 async function generateLighthouse(filename) {
