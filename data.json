@@ -1,13 +1,14 @@
 {
-  "token": "1898235019:AAFZGdfIPji4ne8WDvQPDUw-1nGhMD1GZ8c",
-  "user": [
-    {
-      "chatId": 52900880,
-      "url": "https://www.google.com"
-    },
-    {
-      "chatId": 29476932,
-      "url": "https://sweetandhealthy.de/mango-kokos-energy-balls/"
-    }
-  ]
-}
+    "token": "<token>",
+    "user": [
+      {
+        "chatId": <chatId>,
+        "url": "<url>"
+      },
+      {
+        "chatId": <chatId>,
+        "url": "<url>"
+      }
+    ]
+  }
+  
