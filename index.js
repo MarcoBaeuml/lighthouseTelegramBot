@@ -21,7 +21,7 @@ bot.on("message", (apiJson) => {
   name = apiJson.from.first_name;
   usrNr = getUsrNr();
   date = getDateTime();
-  console.log(date + ": " + chatId + " " + name + ", " + usrNr + ", message: '" + msg + "'");
+  console.log(`${date}: ${chatId} ${name}, ${usrNr}, message: '${msg}'`);
   if (usrNr == -1) {
     return;
   }
@@ -52,8 +52,9 @@ bot.on("callback_query", (callbackQuery) => {
   usrNr = getUsrNr();
   date = getDateTime();
   console.log(
-    date + ": " + chatId + " " + name + ", " + usrNr + ", callback message: '" + msg + "'"
+    `${date}: ${chatId} ${name}, ${usrNr}, callback message: '${msg}'`
   );
+
   if (usrNr == -1) {
     return;
   }
@@ -84,9 +85,9 @@ function onUrl() {
   } else if (url.length == 2 && validUrl.isUri(url[1])) {
     data.user[usrNr].url = url[1];
     fs.outputJsonSync("./data.json", data, { spaces: 2 });
-    bot.sendMessage(chatId, "url has been changed to " + url[1]);
+    bot.sendMessage(chatId, `url has been changed to ${url[1]}`);
   } else {
-    bot.sendMessage(chatId, url[1] + " is an invalid url");
+    bot.sendMessage(chatId, `${url[1]} is an invalid url`);
   }
 }
 
@@ -111,7 +112,7 @@ function onGenerate() {
 }
 
 function onFact() {
-  WikiFakt.getRandomFact().then(function (fact) {
+  WikiFakt.getRandomFact().then((fact) => {
     bot.sendMessage(chatId, fact);
   });
 }
@@ -119,7 +120,7 @@ function onFact() {
 // on callback functions
 
 function onDesktopOrMobile() {
-  const filename = msg + "_" + date + ".html";
+  const filename = `${msg}_${date}.html`;
   generateLighthouse(filename).then(() => {
     sendLighthouseReport(filename);
   });
@@ -138,9 +139,7 @@ function getUsrNr() {
 }
 
 function getDateTime() {
-  const longdate = new Date();
-  const date = dateFormater.format(longdate, "YYYY-MM-DD_HH-mm");
-  return date;
+  return dateFormater.format(new Date(), "YYYY-MM-DD_HH-mm");
 }
 
 async function generateLighthouse(filename) {
