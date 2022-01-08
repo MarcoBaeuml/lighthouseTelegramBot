@@ -15,3 +15,15 @@ Generate Lighthouse reports with Telegram bot
 
 4. Run docker image detached  
 <code>docker run -d lighthousetelegrambot</code>
+
+<br><br>
+
+## Help
+
+### Create Telegram bot
+
+https://core.telegram.org/bots
+
+### Get chat id
+
+https://www.alphr.com/find-chat-id-telegram/
