@@ -10,34 +10,39 @@ const WikiFakt = require("wikifakt");
 const puppeteer = require("puppeteer");
 const validUrl = require("valid-url");
 
-let data = fs.readJsonSync("./data.json");
-const bot = new TelegramBot(data.token, { polling: true });
+if (process.env.BOT_TOKEN === undefined)
+  throw new Error("BOT_TOKEN must be provided!");
 
-let chatId, msg, name, usrNr, date;
+const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 
-bot.on("message", (apiJson) => {
-  chatId = apiJson.chat.id;
-  msg = apiJson.text;
-  name = apiJson.from.first_name;
-  usrNr = getUsrNr();
-  date = getDateTime();
-  console.log(`${date}: ${chatId} ${name}, ${usrNr}, message: '${msg}'`);
-  if (usrNr == -1) {
-    return;
-  }
+const type = { message: "message", callback: "callback" };
+
+const DATA_PATH = "data/data.json",
+  WHITELIST_PATH = "data/whitelist.json";
+
+bot.on("message", (api) => {
+  const {
+    chat: { id: chatId },
+    text: msg,
+    from: { first_name: usrName },
+  } = api;
+  const isValid = UserValid(chatId);
+  log(chatId, msg, usrName, isValid, type.message);
+  if (!isValid) return;
+
   switch (true) {
     case msg == "/help":
     case msg == "/start":
-      onHelporStart();
+      onHelporStart(chatId);
       break;
     case /\/url(.*)/.test(msg):
-      onUrl();
+      onUrl(chatId, msg);
       break;
     case msg == "/generate":
-      onGenerate();
+      onGenerate(chatId);
       break;
     case msg == "/fact":
-      onFact();
+      onFact(chatId);
       break;
     default:
       bot.sendMessage(chatId, "invalid command");
@@ -45,30 +50,83 @@ bot.on("message", (apiJson) => {
   }
 });
 
-bot.on("callback_query", (callbackQuery) => {
-  chatId = callbackQuery.from.id;
-  msg = callbackQuery.data;
-  name = callbackQuery.from.first_name;
-  usrNr = getUsrNr();
-  date = getDateTime();
-  console.log(
-    `${date}: ${chatId} ${name}, ${usrNr}, callback message: '${msg}'`
-  );
+bot.on("callback_query", (api) => {
+  const {
+    from: { id: chatId, first_name: usrName },
+    data: msg,
+  } = api;
+  const isValid = UserValid(chatId);
+  log(chatId, msg, usrName, isValid, type.callback);
+  if (!isValid) return;
 
-  if (usrNr == -1) {
-    return;
-  }
   switch (true) {
     case msg == "desktop":
     case msg == "mobile":
-      onDesktopOrMobile();
+      onDesktopOrMobile(chatId, msg);
       break;
   }
 });
 
-// on message functions
+function UserValid(chatId) {
+  try {
+    ({ chatId: whitelistedUsr } = fs.readJsonSync(WHITELIST_PATH));
 
-function onHelporStart() {
+    return whitelistedUsr.includes(chatId) ? true : false;
+  } catch {
+    console.log(
+      "no whitelist file provided or strucutre incorrect --> accept every user"
+    );
+    return true;
+  }
+}
+
+function log(chatId, msg, usrName, isValid, type) {
+  const date = getDateTime();
+  console.log(
+    `${date} -> chat id: ${chatId}, name: ${usrName}, valid: ${isValid} ${type}: ${msg}`
+  );
+}
+
+function getUsrNr(chatId) {
+  let data;
+  try {
+    data = fs.readJSONSync(DATA_PATH);
+
+    for (let i = 0; i < data.users.length; i++) {
+      if (data.users[i].chatId == chatId) return i;
+    }
+    return createNewUsr(chatId, data);
+  } catch {
+    data = { users: [] };
+    return createNewUsr(chatId, data);
+  }
+}
+
+function createNewUsr(chatId, data) {
+  const newUsr = { chatId: chatId, url: "https://www.google.com" };
+  data.users.push(newUsr);
+  fs.outputJSONSync(DATA_PATH, data, { spaces: 2 });
+  return --data.users.length;
+}
+
+function getUrl(chatId) {
+  const usrNr = getUsrNr(chatId);
+  const data = fs.readJSONSync(DATA_PATH);
+  return data.users[usrNr].url;
+}
+
+function setUrl(chatId, url) {
+  const usrNr = getUsrNr(chatId);
+  const data = fs.readJSONSync(DATA_PATH);
+  data.users[usrNr].url = url;
+  fs.outputJSONSync(DATA_PATH, data, { spaces: 2 });
+}
+
+function getDateTime() {
+  return dateFormater.format(new Date(), "YYYY-MM-DD_HH-mm");
+}
+
+function onHelporStart(chatId) {
   bot.sendMessage(
     chatId,
     "<code>/help - print help \n/url - display current url \n/url &#60url&#62 - change url e.g.: /url https://www.google.com" +
@@ -77,21 +135,19 @@ function onHelporStart() {
   );
 }
 
-function onUrl() {
+function onUrl(chatId, msg) {
   const url = msg.split(" ");
-  data = fs.readJsonSync("./data.json");
   if (url.length == 1) {
-    bot.sendMessage(chatId, "current url: " + data.user[usrNr].url);
+    bot.sendMessage(chatId, "current url: " + getUrl(chatId));
   } else if (url.length == 2 && validUrl.isUri(url[1])) {
-    data.user[usrNr].url = url[1];
-    fs.outputJsonSync("./data.json", data, { spaces: 2 });
+    setUrl(chatId, url[1]);
     bot.sendMessage(chatId, `url has been changed to ${url[1]}`);
   } else {
     bot.sendMessage(chatId, `${url[1]} is an invalid url`);
   }
 }
 
-function onGenerate() {
+function onGenerate(chatId) {
   const opts = {
     reply_markup: {
       inline_keyboard: [
@@ -111,38 +167,19 @@ function onGenerate() {
   bot.sendMessage(chatId, "Select device for lighthouse report ", opts);
 }
 
-function onFact() {
-  WikiFakt.getRandomFact().then((fact) => {
-    bot.sendMessage(chatId, fact);
-  });
+async function onFact(chatId) {
+  const fact = await WikiFakt.getRandomFact();
+  bot.sendMessage(chatId, fact);
 }
 
-// on callback functions
-
-function onDesktopOrMobile() {
+async function onDesktopOrMobile(chatId, msg) {
+  const date = getDateTime();
   const filename = `${msg}_${date}.html`;
-  generateLighthouse(filename).then(() => {
-    sendLighthouseReport(filename);
-  });
+  await generateLighthouse(chatId, msg, filename);
+  sendLighthouseReport(chatId, filename);
 }
 
-//other functions
-
-function getUsrNr() {
-  data = fs.readJsonSync("./data.json");
-  for (let i = 0; i < data.user.length; i++) {
-    if (data.user[i].chatId == chatId) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-function getDateTime() {
-  return dateFormater.format(new Date(), "YYYY-MM-DD_HH-mm");
-}
-
-async function generateLighthouse(filename) {
+async function generateLighthouse(chatId, msg, filename) {
   const config = msg == "desktop" ? configDesktop : configMobile;
   bot.sendMessage(chatId, "Lighthouse is warming up...");
   const browser = await puppeteer.launch({ args: ["--no-sandbox"] });
@@ -151,13 +188,13 @@ async function generateLighthouse(filename) {
     onlyCategories: ["performance", "accessibility", "best-practices", "seo"],
     port: new URL(browser.wsEndpoint()).port,
   };
-  const runnerResult = await lighthouse(data.user[usrNr].url, options, config);
+  const runnerResult = await lighthouse(getUrl(chatId), options, config);
   const reportHtml = runnerResult.report;
   fs.writeFileSync(filename, reportHtml);
   await browser.close();
 }
 
-async function sendLighthouseReport(filename) {
+async function sendLighthouseReport(chatId, filename) {
   await bot.sendDocument(chatId, filename);
   fs.unlinkSync(filename);
 }
