@@ -1,22 +1,19 @@
 # Lighthouse Telegram Bot
 
-Generate Lighthouse reports with Telegram bot
-<img src="https://raw.githubusercontent.com/MarcoBaeuml/lighthouseTelegramBot/master/lighthouseTelegramBot_example.png" alt="lighthouseTelegramBot_example.png" width=80% />
+<p>Generate Lighthouse reports with Telegram bot</p>
+<img src="https://github.com/MarcoBaeuml/lighthouseTelegramBot/blob/master/lighthouseTelegramBot_example.png" alt="lighthouseTelegramBot_example.png" width=60% />
 
 ## Run with Docker
 
-1. Clone the repo  
-<code>git clone https://github.com/MarcoBaeuml/lighthouseTelegramBot.git</code>
+<code>docker run -d -e BOT_TOKEN=&lt;BOT_TOKEN&gt; -v $HOME/lighthouseTelegramBot:/app/data --restart always marcobaeuml/lighthousetelegrambot</code>
 
-2. Edit data.json
+### Block user
 
-3. Build docker image  
-<code>docker build -t lighthousetelegrambot .</code>
-
-4. Run docker image detached  
-<code>docker run -d lighthousetelegrambot</code>
-
-<br><br>
+#### If you want to block unwanted users, you can add a whitelist
+Create whitelist.json in $HOME/lighthouseTelegramBot/data and add the chat IDs you want to grant access to<br>
+<code>echo "{ chatId: [&lt;chatId&gt;, &lt;chatId&gt;] }" > $HOME/lighthouseTelegramBot:/app/data/whitelist.json</code>
+<br>
+<p>If no whitelist file is provided, any user will be accepted</p>
 
 ## Help
 
@@ -24,6 +21,6 @@ Generate Lighthouse reports with Telegram bot
 
 https://core.telegram.org/bots
 
-### Get chat id
+### Get chat ID
 
-https://www.alphr.com/find-chat-id-telegram/
+When you send a message to the bot, a log file is created where you can find your chat ID
