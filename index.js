@@ -9,6 +9,7 @@ const configMobile = require("lighthouse/lighthouse-core/config/lr-mobile-config
 const WikiFakt = require("wikifakt");
 const puppeteer = require("puppeteer");
 const validUrl = require("valid-url");
+const { fstatSync } = require("fs-extra");
 
 if (process.env.BOT_TOKEN === undefined)
   throw new Error("BOT_TOKEN must be provided!");
@@ -18,7 +19,8 @@ const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 const type = { message: "message", callback: "callback" };
 
 const DATA_PATH = "data/data.json",
-  WHITELIST_PATH = "data/whitelist.json";
+  WHITELIST_PATH = "data/whitelist.json",
+  LOG_PATH = "data/log.txt";
 
 bot.on("message", (api) => {
   const {
@@ -26,9 +28,9 @@ bot.on("message", (api) => {
     text: msg,
     from: { first_name: usrName },
   } = api;
-  const isValid = UserValid(chatId);
-  log(chatId, msg, usrName, isValid, type.message);
-  if (!isValid) return;
+  const { usrValid, whitelistApplied } = UserValid(chatId);
+  log(chatId, msg, usrName, usrValid, whitelistApplied, type.message);
+  if (!usrValid) return;
 
   switch (true) {
     case msg == "/help":
@@ -55,9 +57,9 @@ bot.on("callback_query", (api) => {
     from: { id: chatId, first_name: usrName },
     data: msg,
   } = api;
-  const isValid = UserValid(chatId);
-  log(chatId, msg, usrName, isValid, type.callback);
-  if (!isValid) return;
+  const { usrValid, whitelistApplied } = UserValid(chatId);
+  log(chatId, msg, usrName, usrValid, whitelistApplied, type.callback);
+  if (!usrValid) return;
 
   switch (true) {
     case msg == "desktop":
@@ -69,22 +71,32 @@ bot.on("callback_query", (api) => {
 
 function UserValid(chatId) {
   try {
-    ({ chatId: whitelistedUsr } = fs.readJsonSync(WHITELIST_PATH));
+    ({ chatId: whitelisteUsr } = fs.readJsonSync(WHITELIST_PATH));
 
-    return whitelistedUsr.includes(chatId) ? true : false;
+    return whitelisteUsr.includes(chatId)
+      ? { usrValid: true, whitelistApplied: true }
+      : { usrValid: false, whitelistApplied: true };
   } catch {
-    console.log(
-      "no whitelist file provided or strucutre incorrect --> accept every user"
-    );
-    return true;
+    return { usrValid: true, whitelistApplied: false };
   }
 }
 
-function log(chatId, msg, usrName, isValid, type) {
+function log(chatId, msg, usrName, isValid, whitelistApplied, type) {
   const date = getDateTime();
-  console.log(
-    `${date} -> chat id: ${chatId}, name: ${usrName}, valid: ${isValid} ${type}: ${msg}`
-  );
+  const headline =
+    "date, name, chatId, usrValid, whitelistApplied, typ, message";
+  const data = `${date}, ${usrName}, ${chatId}, ${isValid}, ${whitelistApplied}, ${type}, ${msg}`;
+
+  let logContent = [];
+  try {
+    logContent = fs.readFileSync(LOG_PATH).toString().split("\n");
+  } catch {}
+
+  logContent.push(data);
+  logContent.splice(0, logContent.length - 30);
+  if (logContent[0] != headline) logContent.unshift(headline);
+  logContent = logContent.join("\n");
+  fs.outputFile(LOG_PATH, logContent);
 }
 
 function getUsrNr(chatId) {
