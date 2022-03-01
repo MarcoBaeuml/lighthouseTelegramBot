@@ -1,7 +1,7 @@
 # Lighthouse Telegram Bot
 
 <p>Generate Lighthouse reports with Telegram bot</p>
-<img src="https://github.com/MarcoBaeuml/lighthouseTelegramBot/blob/master/lighthouseTelegramBot_example.png" alt="lighthouseTelegramBot_example.png" width=60% />
+<img src="https://raw.githubusercontent.com/MarcoBaeuml/lighthouseTelegramBot/master/lighthouseTelegramBot_example.png" alt="lighthouseTelegramBot_example.png" width=60% />
 
 ## Run with Docker
 
