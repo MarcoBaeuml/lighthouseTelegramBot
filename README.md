@@ -11,7 +11,7 @@
 
 #### If you want to block unwanted users, you can add a whitelist
 Create whitelist.json in $HOME/lighthouseTelegramBot/data and add the chat IDs you want to grant access to<br>
-<code>echo "{ chatId: [&lt;chatId&gt;, &lt;chatId&gt;] }" > $HOME/lighthouseTelegramBot:/app/data/whitelist.json</code>
+<code>echo "{ chatId: [&lt;chatId&gt;, &lt;chatId&gt;] }" > $HOME/lighthouseTelegramBot/data/whitelist.json</code>
 <br>
 <p>If no whitelist file is provided, any user will be accepted</p>
 
