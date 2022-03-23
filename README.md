@@ -8,7 +8,7 @@
 ### Docker run
 
 ```
-docker run -d -e BOT_TOKEN=&lt;BOT_TOKEN&gt; -v $HOME/lighthouseTelegramBot:/app/data --restart always marcobaeuml/lighthousetelegrambot
+docker run -d -e BOT_TOKEN=<BOT_TOKEN> -v $HOME/lighthouseTelegramBot:/app/data --restart always marcobaeuml/lighthousetelegrambot
 ```
 
 ### Docker compose
@@ -20,7 +20,7 @@ services:
         image: marcobaeuml/lighthousetelegrambot
         container_name: lighthousetelegrambot
         environment:
-            - BOT_TOKEN=1898235019:AAHilBg0APHpXt-C3MVi1b3W8TBzgMWWodk
+            - BOT_TOKEN=<BOT_TOKEN>
         volumes:
             - '$HOME/lighthouseTelegramBot:/app/data'
         restart: always
@@ -31,7 +31,7 @@ services:
 #### If you want to block unwanted users, you can add a whitelist
 Create whitelist.json in $HOME/lighthouseTelegramBot/data and add the chat IDs you want to grant access to<br>
 ```
-echo '{ "chatId": [&lt;chatId&gt;, &lt;chatId&gt;] }' > $HOME/lighthouseTelegramBot/whitelist.json
+echo '{ "chatId": [<chatI>, <chatId>] }' > $HOME/lighthouseTelegramBot/whitelist.json
 ```
 <p>If no whitelist file is provided, any user will be accepted</p>
 
