@@ -9,7 +9,6 @@ const configMobile = require("lighthouse/lighthouse-core/config/lr-mobile-config
 const WikiFakt = require("wikifakt");
 const puppeteer = require("puppeteer");
 const validUrl = require("valid-url");
-const { fstatSync } = require("fs-extra");
 
 if (process.env.BOT_TOKEN === undefined)
   throw new Error("BOT_TOKEN must be provided!");
@@ -199,6 +198,7 @@ async function generateLighthouse(chatId, msg, filename) {
     output: "html",
     onlyCategories: ["performance", "accessibility", "best-practices", "seo"],
     port: new URL(browser.wsEndpoint()).port,
+    throttling: { cpuSlowdownMultiplier: 1 },
   };
   const runnerResult = await lighthouse(getUrl(chatId), options, config);
   const reportHtml = runnerResult.report;
